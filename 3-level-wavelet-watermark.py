@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.linalg import norm 
 import matplotlib.pyplot as plt
 import pywt
 import cv2
@@ -27,9 +28,9 @@ def putText(image, text):
     return image
 
 
-file_photo="./desktop-wallpaper-full-nature-04-jpeg-1600×900-paysage-coucher-de-soleil-fond-ecran-paysage-nature-paysage.jpg"
+file_photo="./image/desktop-wallpaper-full-nature-04-jpeg-1600×900-paysage-coucher-de-soleil-fond-ecran-paysage-nature-paysage.jpg"
 
-water_mark="./fond-ecran-windows-seven-wallpaper-32.jpeg"
+water_mark="./watermark/fond-ecran-windows-seven-wallpaper-32.jpeg"
 
 image =cv2.imread(file_photo,cv2.IMREAD_GRAYSCALE)
 
@@ -71,6 +72,7 @@ c_reconstru=[LL3_prime, (HL3, LH3, HH3), (HL2, LH2, HH2), (LL1, LH1, HH1)]
 
 img_reconstru=pywt.waverec2(c_reconstru,'db2',mode='periodization')
 
+
 #---ici on essaie de retrouver le watermark---------------
 img_reconstru_bis=img_reconstru.copy()
 
@@ -82,7 +84,7 @@ PLL3_prime=(PLL3-0.85*LL3)/0.009
 
 c_reconstru_water=[PLL3_prime, (PHL3, PLH3, PHH3),(PHL2, PLH2, PHH2),(PLL1, PLH1, PHH1)]
 
-arr, slices = pywt.coeffs_to_array(c_reconstru_water)
+arr1, slices1 = pywt.coeffs_to_array(c_reconstru_water)
 
 img_reconstru_water=pywt.waverec2(c_reconstru_water,'db2',mode='periodization')
 
@@ -93,24 +95,46 @@ img_with_title= img_reconstru.copy()
 
 img_with_title=putText(img_with_title,"protected")
 
-
 c_img_with_title=pywt.wavedec2(img_with_title,'db2',mode='periodization',level=3)
 
 RLL3, (RHL3, RLH3, RHH3), (RHL2, RLH2, RHH2), (RLL1, RLH1, RHH1)=c_img_with_title
 
-RLL3_prime=(RLL3-0.85*LL3)/0.009
+RLL3_prime=(RLL3-0.85*LL3)
 
 c_water_reconstru=[RLL3_prime, (RHL3, RLH3, RHH3), (RHL2, RLH2, RHH2), (RLL1, RLH1, RHH1)]
 
+
+arr2,slices2=pywt.coeffs_to_array(c_water_reconstru)
+
 img_water_reconstru=pywt.waverec2(c_water_reconstru,'db2',mode='periodization')
 
+
+#-----------calcul PSNR and MSE ------------------------------
+
+
+def MSE(image_reconstru,image_original):
+    n=image_reconstru.shape[0]
+    m=image_reconstru.shape[1]
+    s=0
+    
+    for i in range(n):
+        for j in range(m):
+            s+=(image_reconstru[i][j]-image_original[i][j])**2
+    
+    return (1/(n*m))*s
+
+def PSNR(image_reconstru,image_original):
+    return 10*np.log10((255)**2 / MSE(image_reconstru,image_original))
 
 
 #-------------affichage----------------------
 
 
+
 plt.figure()
-plt.imshow(arr,cmap=plt.cm.gray)
+plt.imshow(img_reconstru,cmap=plt.cm.gray)
+print("MSE est de ",MSE(img_reconstru,image))
+print("PSNR est de ",PSNR(img_reconstru,image))
 plt.show()
 
 
