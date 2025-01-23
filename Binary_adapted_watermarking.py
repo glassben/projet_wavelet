@@ -5,12 +5,15 @@ import numpy as np
 
 #-------------début chargement photo--------------------------------------------
 
-def embedded_Binary_adapted(file_photo="./image/desktop-wallpaper-full-nature-04-jpeg-1600×900-paysage-coucher-de-soleil-fond-ecran-paysage-nature-paysage.jpg",water_mark="./watermark/A-sample-binary-watermark-logo-image.png"):
+def embedded_Binary_adapted(file_photo="./image/desktop-wallpaper-full-nature-04-jpeg-1600×900-paysage-coucher-de-soleil-fond-ecran-paysage-nature-paysage.jpg",water_mark="./watermark/A-sample-binary-watermark-logo-image.png",alpha=30):
 
     image =cv2.imread(file_photo,cv2.IMREAD_GRAYSCALE)
 
     if image.dtype == np.float32:  # if not integer
         image = (image * 255).astype(np.uint8)
+
+
+    image=cv2.resize(image,(256,256))
 
     c = pywt.wavedec2(image, 'haar', mode='periodization',level=4)
 
@@ -34,7 +37,8 @@ def embedded_Binary_adapted(file_photo="./image/desktop-wallpaper-full-nature-04
 
 #----------------- watermarked embedding -----------------------------------
 
-
+    N=longueur_reduced_water_shape*largeur_reduced_water_shape
+    
     w=np.zeros(longueur_reduced_water_shape*largeur_reduced_water_shape)
 
 
@@ -48,11 +52,8 @@ def embedded_Binary_adapted(file_photo="./image/desktop-wallpaper-full-nature-04
 
 
 
-    alpha=30
 
 
-
-    N=len(w)
 
     image_water_mark1=w[0:N//2+1] #w1 coefficient à mettre dans I2⁰ 
     image_water_mark2=w[N//2+1:] # w2 coefficient à mettre dans I2²
@@ -66,7 +67,7 @@ def embedded_Binary_adapted(file_photo="./image/desktop-wallpaper-full-nature-04
 
     hauteur_hl3,largeur_hl3=HL3_prime.shape
     hauteur_lh3,largeur_lh3=LH3_prime.shape
-    hauteur_hl4,largeur_hl4=HL4_prime.shape
+    
 
 
 
@@ -104,23 +105,23 @@ def embedded_Binary_adapted(file_photo="./image/desktop-wallpaper-full-nature-04
 
 
     for i,k in enumerate(indices_HL3):
-        HL3[k//largeur_hl3][k%largeur_hl3]=HL3[k//largeur_hl3][k%largeur_hl3]+30*image_water_mark1[i]
+        HL3[k//largeur_hl3][k%largeur_hl3]=HL3[k//largeur_hl3][k%largeur_hl3]+alpha*image_water_mark1[i]
 
     for i,k in enumerate(indices_LH3):
-        LH3[k//largeur_lh3][k%largeur_lh3]=LH3[k//largeur_lh3][k%largeur_lh3]+30*image_water_mark2[i]
+        LH3[k//largeur_lh3][k%largeur_lh3]=LH3[k//largeur_lh3][k%largeur_lh3]+alpha*image_water_mark2[i]
 
 
     c_reconstru=[LL4, (HL4,LH4,HH4), (HL3, LH3, HH3), (HL2, LH2, HH2), (LL1, LH1, HH1)]
 
 
-    img_reconstru=pywt.waverec2(c_reconstru,'haar',mode='periodization')
+    img_a_reconstruire=pywt.waverec2(c_reconstru,'haar',mode='periodization')
 
-    return img_reconstru,image
+    return img_a_reconstruire,image,real_shape
 
 
 #-------------------- watermarked desembedding ------------------------------#
 
-def desembedding(img_reconstru,image):
+def desembedding(img_reconstru,image,shape_watermark):
 
 
     c_a_reconstruire = pywt.wavedec2(img_reconstru, 'haar', mode='periodization',level=4)
@@ -187,16 +188,19 @@ def desembedding(img_reconstru,image):
         else:
             w_reconstru[N//2+i]=1
 
-    w_reconstru=w_reconstru.reshape((largeur_lh3,hauteur_hl3))
+    w_reconstru=w_reconstru.reshape((largeur_hl3,hauteur_hl3))
+    
     return w_reconstru
 
-if __name__=="__main__":
+#if __name__=="__main__":
 
-    img_reconstru,_=embedded_Binary_adapted()
+    #img_reconstruite,image_original,shape_a_passer=embedded_Binary_adapted()
+    
+    #watermark_reconstruit=desembedding(img_reconstruite,image_original,shape_a_passer)
 
-    plt.figure()
-    plt.imshow(img_reconstru,cmap=plt.cm.gray)
-    plt.show()
+    #plt.figure()
+    #plt.imshow(watermark_reconstruit,cmap=plt.cm.gray)
+    #plt.show()
 
 
 

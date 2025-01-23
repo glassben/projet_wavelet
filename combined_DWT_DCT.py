@@ -3,11 +3,11 @@ import matplotlib.pyplot as plt
 import pywt
 import numpy as np
 from scipy.fftpack import dct,idct
-from random import seed,randint
+from random import seed,randint,random
 
 
 def embedded_combined(file_photo="./image/desktop-wallpaper-full-nature-04-jpeg-1600×900-paysage-coucher-de-soleil-fond-ecran-paysage-nature-paysage.jpg"
-,water_mark="./watermark/A-sample-binary-watermark-logo-image.png"):
+,water_mark="./watermark/A-sample-binary-watermark-logo-image.png",k=30):
 
 
 
@@ -16,7 +16,7 @@ def embedded_combined(file_photo="./image/desktop-wallpaper-full-nature-04-jpeg-
     if image.dtype == np.float32:  # if not integer
         image = (image * 255).astype(np.uint8)
 
-    image=cv2.resize(image,(512,512))
+    image=cv2.resize(image,(256,256))
     # decomposition en 4
 
     c = pywt.wavedec2(image, 'haar', mode='periodization',level=1)
@@ -68,17 +68,20 @@ def embedded_combined(file_photo="./image/desktop-wallpaper-full-nature-04-jpeg-
 
 
 
-    k=30
+    
 
     maxi=0
     for i in range(0,longueur_HL,4):
         for j in range(0,largeur_HL,4):
             subpixels=all_subdct[i:i+4, j:j+4]
-            maxi=max(subpixels[2,2],maxi)
+            maxi=max(subpixels[1,2],maxi)
+            maxi=max(subpixels[1,3],maxi)
+            maxi=max(subpixels[2,0],maxi)
+            maxi=max(subpixels[2,1],maxi)
 
     seed(4)
-    one=randint(0,int((255-maxi)/k))
-    zero=randint(0,int((255-maxi)/k))
+    one=[random(),random(),random(),random()]
+    zero=[random(),random(),random(),random()]
 
     #print(one)
     #print(zero)
@@ -89,9 +92,16 @@ def embedded_combined(file_photo="./image/desktop-wallpaper-full-nature-04-jpeg-
             if ind < len(image_water_mark):
                 subdct=all_subdct[x:x+4,y:y+4]
                 if image_water_mark[ind]==255:
-                    subdct[2,2]=subdct[2,2]+k*one
+                    subdct[1,2]=subdct[1,2]+k*one[0]
+                    subdct[1,3]=subdct[1,3]+k*one[1]
+                    subdct[2,0]=subdct[2,0]+k*one[2]
+                    subdct[2,1]=subdct[2,1]+k*one[3]
                 else :
-                    subdct[2,2]=subdct[2,2]+k*zero
+                    subdct[2,2]=subdct[2,2]+k*zero[0]
+                    subdct[1,3]=subdct[1,3]+k*zero[1]
+                    subdct[2,0]=subdct[2,0]+k*zero[2]
+                    subdct[2,1]=subdct[2,1]+k*zero[3]
+                
                 all_subdct[x:x+4, y:y+4] = subdct
                 ind += 1
 
@@ -113,7 +123,7 @@ def embedded_combined(file_photo="./image/desktop-wallpaper-full-nature-04-jpeg-
 
     image_reconstru=pywt.waverec2(c, 'haar', mode='periodization')
 
-    return image_reconstru,real_shape
+    return image_reconstru,image,real_shape
 
 
 def disembedded(image_embedded,real_shape):
@@ -137,14 +147,17 @@ def disembedded(image_embedded,real_shape):
         for j in range(0,largeur_RHL,4):
             subpixels=RHL[i:i+4,j:j+4]
             subdct = dct(dct(subpixels.T, norm="ortho").T, norm="ortho")
-            all_subdct.append(subdct[2,2])
-            maxi=max(subdct[2,2],maxi)
+            coeff=[subdct[1,2],subdct[1,3],subdct[2,0],subdct[2,1]]
+            all_subdct.append(coeff)
+            maxi=max(subdct[1,2],maxi)
+            maxi=max(subdct[1,3],maxi)
+            maxi=max(subdct[2,0],maxi)
+            maxi=max(subdct[2,1],maxi)
             
     
     seed(4)
-    k=30
-    one=randint(0,int((255-maxi)/k))
-    zero=randint(0,int((255-maxi)/k))
+    one=[random(),random(),random(),random()]
+    zero=[random(),random(),random(),random()]
     
     
     #print(one)
@@ -152,15 +165,14 @@ def disembedded(image_embedded,real_shape):
     
     for i,x in enumerate(all_subdct):
         corr1=np.corrcoef(x,one)[0,1]
-        print(corr1)
         corr0=np.corrcoef(x,zero)[0,1]
-        print(corr0)
         if corr1>corr0:
             watermarked[i]=255
         else:
             watermarked[i]=0
     
-    watermarked=cv2.resize(watermarked,real_shape)
+    watermarked=cv2.resize(watermarked,(real_shape[1],real_shape[0]))
+    
     return watermarked
             
    
@@ -170,16 +182,16 @@ def disembedded(image_embedded,real_shape):
 
 
 
-if __name__=="__main__":
+#if __name__=="__main__":
 
-    image_embedded,shape_return=embedded_combined()
-    watermark_reconstruit=disembedded(image_embedded,shape_return)
+    #image_embedded,shape_return=embedded_combined()
+    #watermark_reconstruit=disembedded(image_embedded,shape_return)
     
     
     
-    plt.figure()
-    plt.imshow(watermark_reconstruit,cmap=plt.cm.gray)
-    plt.show()
+    #plt.figure()
+    #plt.imshow(watermark_reconstruit,cmap=plt.cm.gray)
+    #plt.show()
 
 
 
