@@ -41,11 +41,15 @@ def embedding_least_significative(file_photo="./image/desktop-wallpaper-full-nat
 
 def desembedding_least_significative(image_a_reconstruire,k,shape_reconstru_water):
         
+    if image_a_reconstruire.dtype == np.float32:  # if not integer
+        image_a_reconstruire = (image_a_reconstruire * 255).astype(np.uint8)
+        
+        
     image_reconstru=image_a_reconstruire.copy()
 
     for i in range(image_reconstru.shape[0]):
         for j in range(image_reconstru.shape[1]):
-            image_reconstru[i,j]=image_reconstru[i,j]<<(8-k)
+            image_reconstru[i,j]=int(image_reconstru[i,j])<<(8-k)
     
     image_reconstru=cv2.resize(image_reconstru,(shape_reconstru_water[1],shape_reconstru_water[0]))
     return image_reconstru

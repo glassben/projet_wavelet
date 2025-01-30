@@ -97,7 +97,7 @@ def embedded_combined(file_photo="./image/desktop-wallpaper-full-nature-04-jpeg-
                     subdct[2,0]=subdct[2,0]+k*one[2]
                     subdct[2,1]=subdct[2,1]+k*one[3]
                 else :
-                    subdct[2,2]=subdct[2,2]+k*zero[0]
+                    subdct[1,2]=subdct[1,2]+k*zero[0]
                     subdct[1,3]=subdct[1,3]+k*zero[1]
                     subdct[2,0]=subdct[2,0]+k*zero[2]
                     subdct[2,1]=subdct[2,1]+k*zero[3]

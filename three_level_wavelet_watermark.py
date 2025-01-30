@@ -20,6 +20,7 @@ def image_embedded_three_level(file_photo="./image/target_image2.jpg"
 
     image_water_mark=cv2.imread(water_mark,cv2.IMREAD_GRAYSCALE)
     
+    
     real_shape=image_water_mark.shape
 
     image_water_mark=cv2.resize(image_water_mark,(image.shape[1],image.shape[0]))
@@ -73,7 +74,8 @@ def disembedded_three_level(img_a_reconstruire,image_original,shape_watermark,al
     
 
     #img_reconstru_water=pywt.waverec2(c_reconstru_water,'db2',mode='periodization')
-
+    PLL3_prime=cv2.resize(PLL3_prime,(shape_watermark[1],shape_watermark[0]))
+    
     return PLL3_prime
 
 
@@ -83,18 +85,11 @@ def disembedded_three_level(img_a_reconstruire,image_original,shape_watermark,al
 
 #-------------affichage----------------------
 
-if __name__=="__main__":
+#if __name__=="__main__":
 
-    img_reconstru,image_originale,real_shape,alpha_reconstru=image_embedded_three_level()
-    watermark_reconstru=disembedded_three_level(img_reconstru,image_originale,real_shape,alpha_reconstru)
+    #img_reconstru,image_originale,real_shape,alpha_reconstru=image_embedded_three_level()
+    #watermark_reconstru=disembedded_three_level(img_reconstru,image_originale,real_shape,alpha_reconstru)
     
-    plt.figure()
-    plt.imshow(watermark_reconstru,cmap=plt.cm.gray)
-    plt.show()
-
-
-
-
-
-
-
+    #plt.figure()
+    #plt.imshow(watermark_reconstru,cmap=plt.cm.gray)
+    #plt.show()

@@ -8,6 +8,8 @@ import numpy as np
 def embedded_Binary_adapted(file_photo="./image/desktop-wallpaper-full-nature-04-jpeg-1600×900-paysage-coucher-de-soleil-fond-ecran-paysage-nature-paysage.jpg",water_mark="./watermark/A-sample-binary-watermark-logo-image.png",alpha=30):
 
     image =cv2.imread(file_photo,cv2.IMREAD_GRAYSCALE)
+    
+    
 
     if image.dtype == np.float32:  # if not integer
         image = (image * 255).astype(np.uint8)
@@ -15,18 +17,21 @@ def embedded_Binary_adapted(file_photo="./image/desktop-wallpaper-full-nature-04
 
     image=cv2.resize(image,(256,256))
 
+    
+    image_copy=image.copy()
+    
     c = pywt.wavedec2(image, 'haar', mode='periodization',level=4)
 
     LL4, (HL4,LH4,HH4), (HL3, LH3, HH3), (HL2, LH2, HH2), (LL1, LH1, HH1) =c
 
 
 
-
+    
 
 
 
     image_water_mark=cv2.imread(water_mark,cv2.IMREAD_GRAYSCALE)
-
+    
     real_shape=image_water_mark.shape
 
     longueur_reduced_water_shape,largeur_reduced_water_shape=HL3.shape
@@ -44,7 +49,7 @@ def embedded_Binary_adapted(file_photo="./image/desktop-wallpaper-full-nature-04
 
     for i in range(image_water_mark.shape[0]):
         for j in range(image_water_mark.shape[1]):
-            if image_water_mark[i,j]==255:
+            if image_water_mark[i,j]>np.std(image_water_mark)*np.sqrt(np.log(image_water_mark.shape[0]*2)):
                 w[image_water_mark.shape[1]*i+j]=1
             else:
                 w[image_water_mark.shape[1]*i+j]=-1
@@ -101,22 +106,32 @@ def embedded_Binary_adapted(file_photo="./image/desktop-wallpaper-full-nature-04
         indices_LH3[n]=my_min
         LH3_prime[my_min]=np.nan
 
-
-
+    #print("indice phase de construction")
+    #print("indice HL3: ",indices_HL3)
+    #print()
+    #print("indice_LH3 :",indices_LH3)
+    #print()
+    pos_HL3=[]
+    pos_LH3=[]
 
     for i,k in enumerate(indices_HL3):
         HL3[k//largeur_hl3][k%largeur_hl3]=HL3[k//largeur_hl3][k%largeur_hl3]+alpha*image_water_mark1[i]
-
+        if image_water_mark1[i]==1:
+            pos_HL3.append(k)
     for i,k in enumerate(indices_LH3):
         LH3[k//largeur_lh3][k%largeur_lh3]=LH3[k//largeur_lh3][k%largeur_lh3]+alpha*image_water_mark2[i]
-
-
+        if image_water_mark2[i]==1:
+            pos_LH3.append(k)
+        
+    
+    #print("indice_positive HL3:",pos_HL3)
+    
     c_reconstru=[LL4, (HL4,LH4,HH4), (HL3, LH3, HH3), (HL2, LH2, HH2), (LL1, LH1, HH1)]
 
 
     img_a_reconstruire=pywt.waverec2(c_reconstru,'haar',mode='periodization')
 
-    return img_a_reconstruire,image,real_shape
+    return img_a_reconstruire,image_copy,real_shape
 
 
 #-------------------- watermarked desembedding ------------------------------#
@@ -144,16 +159,16 @@ def desembedding(img_reconstru,image,shape_watermark):
 
     HL3_prime=HL3.copy()
     LH3_prime=LH3.copy()
-
+    HL4_prime=HL4.copy()
 
 
     for i in range(hauteur_hl3):
         for j in range(largeur_hl3):
-            HL3_prime[i,j]=(1/256)*(HL4[(i//2),(j//2)])
+            HL3_prime[i,j]=(1/256)*(HL4_prime[(i//2),(j//2)])
 
     for i in range(hauteur_lh3):
         for j in range(largeur_lh3):
-            LH3_prime[i,j]=(1/256)*(HL4[(i//2),(j//2)])
+            LH3_prime[i,j]=(1/256)*(HL4_prime[(i//2),(j//2)])
 
 
     HL3_prime=HL3_prime.flatten()
@@ -173,22 +188,29 @@ def desembedding(img_reconstru,image,shape_watermark):
         LH3_prime[my_min]=np.nan
 
 
-
+    #print("indice reconstruction")
+    #print("indice HL3:" ,indices_HL3)
+    #print()
+    #print("indice LH3:", indices_LH3)
+    #print()
+    
     for i,k in enumerate(indices_HL3):
         num=RHL3[k//largeur_hl3][k%largeur_hl3]-HL3[k//largeur_hl3][k%largeur_hl3]
         if num<=0:
             w_reconstru[i]=0
         else:
-            w_reconstru[i]=1
+            w_reconstru[i]=255
 
     for i,k in enumerate(indices_LH3):
-        num=LH3[k//largeur_lh3][k%largeur_lh3]-LH3[k//largeur_lh3][k%largeur_lh3]
+        num=RLH3[k//largeur_lh3][k%largeur_lh3]-LH3[k//largeur_lh3][k%largeur_lh3]
         if num <=0:
             w_reconstru[N//2+i]=0
         else:
-            w_reconstru[N//2+i]=1
+            w_reconstru[N//2+i]=255
 
     w_reconstru=w_reconstru.reshape((largeur_hl3,hauteur_hl3))
+    
+    
     
     return w_reconstru
 
